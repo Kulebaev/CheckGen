@@ -74,14 +74,17 @@ def unprinted_check(request):
 def printed_check(request):
 
     if request.method != 'POST':
-        return JsonResponse({'message': 'Ожидается метод Get'}, status=404)
+        return JsonResponse({'message': 'Ожидается метод Post'}, status=404)
 
     data = json.loads(request.body)
 
     printer_api = data.get('printer_api')
     order_id = data.get('order_id')
 
-    printerObj = Printer.objects.get(api_key=printer_api)
-    orderCheckPDF = Check.objects.filter(order_id=order_id, printer=printerObj).values('pdf_file')
+    printerObj = Printer.objects.filter(api_key=printer_api)
+    orderCheck = Check.objects.get(order_id=order_id, printer=printerObj)
+    
+    orderCheck.status = 'printed'
+    orderCheck.save()
 
-    return JsonResponse({'путь': list(orderCheckPDF)}, status=200)
+    return JsonResponse({'путь': list(orderCheck.pdf_file)}, status=200)
