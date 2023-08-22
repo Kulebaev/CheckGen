@@ -72,19 +72,22 @@ def unprinted_check(request):
 
 @csrf_exempt
 def printed_check(request):
-
     if request.method != 'POST':
-        return JsonResponse({'message': 'Ожидается метод Post'}, status=404)
+        return JsonResponse({'message': 'Ожидается метод POST'}, status=400)
 
     data = json.loads(request.body)
-
     printer_api = data.get('printer_api')
     order_id = data.get('order_id')
 
-    printerObj = Printer.objects.filter(api_key=printer_api)
-    orderCheck = Check.objects.get(order_id=order_id, printer=printerObj)
-    
+    try:
+        printerObj = Printer.objects.get(api_key=printer_api) # я тут правильно сделал ?
+        orderCheck = Check.objects.get(order_id=order_id, printer=printerObj) # я тут правильно сделал ?
+    except (Printer.DoesNotExist, Check.DoesNotExist):
+        return JsonResponse({'message': 'Принтер или чек не найдены'}, status=404)
+
     orderCheck.status = 'printed'
     orderCheck.save()
 
-    return JsonResponse({'путь': list(orderCheck.pdf_file)}, status=200)
+    pdf_file_path = orderCheck.pdf_file.path  # Получаем путь к файлу
+
+    return JsonResponse({'pdf_file_path': pdf_file_path}, status=200)
